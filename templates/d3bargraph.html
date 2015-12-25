@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{{player.Player}} Projections</title>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="http://labratrevenge.com/d3-tip/javascripts/d3.tip.v0.6.3.js"></script>
+<style>
+
+body {
+  font: 12px sans-serif;
+}
+
+strong {
+  font: 12px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: steelblue;
+}
+
+.x.axis path {
+  display: none;
+}
+
+.y.axis text {
+    font-family: sans-serif;
+    font-size: 15px;
+}
+
+.tick {
+  font-size: 16px;
+}
+
+.d3-tip {
+  line-height: 1;
+  font-weight: bold;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.8);
+  color: #fff;
+  border-radius: 4px;
+}
+
+.d3-tip:after {
+  display: inline;
+  font-size: 16px;
+  width: 100%;
+  line-height: 1;
+  color: rgba(0, 0, 0, 0.8);
+  content: "\25BC";
+  position: absolute;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.d3-tip.n:after {
+  margin: -1px 0 0 0;
+  top: 100%;
+  left: 0;
+  }
+
+
+</style>
+</head>
+<body>
+  <script type=text/javascript>
+
+
+var margin = {top: 80, right: 20, bottom: 40, left: 40},
+    width = 1100 - margin.left - margin.right,
+    height = 600 - margin.top - margin.bottom;
+
+var x0 = d3.scale.ordinal()
+    .rangeRoundBands([0, width], .15);
+
+var x1 = d3.scale.ordinal();
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var color = d3.scale.ordinal()
+    .range(["#98abc5", "#8a89a6", "#7b6888", "#6b486b", "#a05d56", "#d0743c", "#ff8c00"]);
+
+var xAxis = d3.svg.axis()
+    .scale(x0)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left")
+    .tickFormat(d3.format(".2s"));
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var tip = d3.tip()
+  .attr('class', 'd3-tip')
+  .offset([-10, 0])
+  .html(function(d) {
+    return "<strong style='font-size: 12pt'>Salary:</strong> <span style='color:red; font-size: 12pt'>" + d.salary + "</span>" + "<br/>"  +  "<strong style='font-size: 12pt'>Position:</strong> <span style='color:lightBlue; font-size: 12pt'>" + d.position;
+    // return "<strong>Salary:</strong> <span style='color:red; font-size: 11pt'>" + d.salary + "</span>";
+  })
+
+
+svg.call(tip);
+
+  
+var playerID = {{ player.Index | tojson | safe }}
+var playerName = {{ player.Player | tojson | safe }}
+var playerSalary = {{ player.Salary | tojson | safe }}
+var playerGameTime = {{ player.GameTime | tojson | safe }}
+var playerTeam = {{ player.Team | tojson | safe }}
+var playerRG = {{ player.RG | tojson | safe }}
+var playerFP = {{ player.FP | tojson | safe }}
+var playerNF = {{ player.NF | tojson | safe }}
+var playerRW = {{ player.RW | tojson | safe }}
+var playerPOS = {{ player.POS | tojson | safe }}
+var playerG_Model = {{ player.G_Model | tojson | safe }}
+var playerPPD = {{ player.PPD | tojson | safe }}
+
+var data = []
+
+{% for t in teammates %}
+
+var datum =
+{
+  'playerID' : {{ t.Index | tojson | safe }}, 
+  'playerName':   {{ t.Player | tojson | safe }}, 
+  'salary':  {{ t.Salary | tojson | safe }}, 
+  'position':  {{ t.POS | tojson | safe }}, 
+  'gameTime': {{ t.GameTime | tojson | safe }}, 
+  'Rotogrinders':  {{ t.RG | tojson | safe }}, 
+  'Fantasypros':  {{ t.FP | tojson | safe }},
+  'Numberfire':  {{ t.NF | tojson | safe }}, 
+  'Rotowire':  {{ t.RW | tojson | safe }},
+  'G-Model':   {{ t.G_Model | tojson | safe }}, 
+  'ppd':  {{ t.PPD | tojson | safe }} 
+ };
+
+data.push(datum);
+
+{% endfor %}
+
+//console.log(data)
+
+
+var siteNames = d3.keys(data[0]).filter(function(key) { 
+  return (key !== "playerName") && (key !== "position") && (key !== "ppd")
+  && (key !== 'salary') && (key !== 'gameTime') && (key !== "playerID"); 
+})
+
+
+data.forEach(function(d) {
+    d.projections = siteNames.map(function(name) { //console.log(name); console.log(d[name]);
+      return {name: name, value: +d[name]}; });
+  });
+
+//console.log(data)
+
+x0.domain(data.map(function(d) { return d.playerName; }));
+x1.domain(siteNames).rangeRoundBands([0, x0.rangeBand()]);
+ y.domain([0, d3.max(data, function(d) { return d3.max(d.projections, function(d) { 
+  //console.log()
+  return d.value; }); })]);
+
+svg.append("text")
+      .attr("x", (width / 2))             
+      .attr("y", 0 )
+      .attr("text-anchor", "middle")  
+      .style("font-size", "30px")
+      .style('font-family', 'Century Gothic, sans-serif')
+      .style('fill', 'darkGreen')  
+      .text( "Projections for " + playerName + " and " + playerTeam )
+
+svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis)
+
+
+
+svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("Projection");
+
+  var player = svg.selectAll(".player")
+      .data(data)
+    .enter().append("g")
+      .attr("class", "player")
+      .attr("transform", function(d) { return "translate(" + x0(d.playerName) + ",0)"; })
+      .on('mouseover', tip.show)
+      .on('mouseout', tip.hide);
+
+  var insertLinebreaks = function (d) {
+    var el = d3.select(this);
+    var words = d.split(' ');
+    el.text('');
+
+    for (var i = 0; i < words.length; i++) {
+        var tspan = el.append('tspan').text(words[i]);
+        if (i > 0)
+            tspan.attr('x', 0).attr('dy', '15');
+    }
+};
+  
+  svg.selectAll('g.x.axis g text').each(insertLinebreaks);
+
+  player.selectAll("rect")
+      .data(function(d) { return d.projections; })
+    .enter().append("rect")
+      .attr("width", x1.rangeBand())
+      .attr("x", function(d) { return x1(d.name); })
+      .attr("y", function(d) { return y(d.value); })
+      .attr("height", function(d) { return height - y(d.value); })
+      .style("fill", function(d) { return color(d.name); });
+
+  var legend = svg.selectAll(".legend")
+      .data(siteNames.slice().reverse())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(25,"  + (siteNames.length -i) * 30  + ")"; })
+      .style("font-size","16px");
+
+  legend.append("rect")
+      .attr("x", width - 30)
+      .attr("width", 30)
+      .attr("height", 20)
+      .style("fill", color);
+
+  legend.append("text")
+      .attr("x", width - 35)
+      .attr("y", 7)
+      .attr("dy", ".75em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d; });
+
+</script>
+ 
+</body>
+</html>

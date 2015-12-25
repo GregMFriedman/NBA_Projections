@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>All Projections</title>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+  <style>
+  .tooltip {  
+    position: absolute;     
+    text-align: center;     
+    width: 60px;          
+    height: 60px;         
+    padding: 2px;       
+    font: 12px sans-serif;    
+    background: lightsteelblue; 
+    border: 0px;    
+    border-radius: 8px;     
+    pointer-events: none;   
+  }
+
+  body {
+    font: 15px sans-serif;
+  }
+ 
+  .axis path,
+  .axis line {
+    fill: none;
+    stroke: #000;
+    shape-rendering: crispEdges;
+  }
+
+  </style>  
+</head>
+
+
+<body>
+
+  <!-- Destination for svg chart -->
+  <svg class="chart"></svg> 
+
+  <script>
+
+    // Set margins
+    var margin = {top: 20, right: 20, bottom: 30, left: 40},
+      width = 960 - margin.left - margin.right,
+      height = 500 - margin.top - margin.bottom;
+
+    // Append chart template to SVG 
+    var svg = d3.select(".chart")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    // setup x 
+    var xScale = d3.scale.linear().range([0, width]),
+        xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+     
+    // setup y
+    var yScale = d3.scale.linear().range([height, 0]),
+        yAxis = d3.svg.axis().scale(yScale).orient("left");
+    
+    
+    // Add title
+    svg.append("text")
+      .attr("x", (width / 2))             
+      .attr("y", 0 + (margin.top / 2))
+      .attr("text-anchor", "middle")  
+      .style("font-size", "28px")
+      .style('font-family', 'Century Gothic, sans-serif')
+      .style('fill', 'darkGreen')  
+      .text("Fan Duel Player Projections")
+
+
+
+    // x-axis
+    svg.append("g")
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis)
+      .append("text")
+        .attr("class", "label")
+        .attr("x", width)
+        .attr("y", -6)
+        .style("text-anchor", "end")
+        .text("Salary in $1 FD");
+     
+    // y-axis
+    svg.append("g")
+        .attr("class", "y-axis")
+        .call(yAxis)
+      .append("text")
+        .attr("class", "label")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 6)
+        .attr("dy", ".71em")
+        .style("text-anchor", "end")
+        .text("Projected Points");
+
+    var tooltip = d3.select("body").append("div")
+      .attr("class", "tooltip")
+      .style("opacity", 0);
+
+    // Empty array to load the data into
+    var data = []
+
+
+      {% for p in players %}
+
+      var datum = 
+        {
+        'playerID': {{ p.Index | tojson | safe }}, 
+        'playerName':   {{ p.Player | tojson | safe }}, 
+        'gameTime':  {{ p.GameTime | tojson | safe }}, 
+        'salary':  {{ p.Salary | tojson | safe }}, 
+        'position':  {{ p.POS | tojson | safe }}, 
+        'depth': {{ p.Depth | tojson | safe }}, 
+        'rg':  {{ p.RG | tojson | safe }}, 
+        'fp':  {{ p.FP | tojson | safe }},
+        'nf':  {{ p.NF | tojson | safe }}, 
+        'rw':  {{ p.RW | tojson | safe }},
+        'g_model':   {{ p.G_Model | tojson | safe }}, 
+        'ppd':  {{ p.PPD | tojson | safe }},
+        't_index':  {{ p.Team_Index | tojson | safe }}
+        };
+
+      data.push(datum);
+  
+      {% endfor %}
+
+      var playerNames = data.map(function(d) { return d.playerName; })
+      console.log(playerNames);
+
+
+      console.log(data)
+
+      
+
+
+    function updateProjections(data) 
+    {
+
+      console.log('Update Initiated!')
+
+      var dots = svg.selectAll('.dot')
+        .data(data, function(d) { return d;});
+
+        var yValue2 = function(d) { return d['g_model'];},
+          yScale = d3.scale.linear().range([height, 0]),
+          yMap2 = function(d) { return yScale(yValue2(d));},
+          yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+
+      dots.attr("class", "update")
+        .transition()
+        .attr('cy', yMap2)
+          .delay(750)
+          .duration(750)
+          .ease('elastic');
+
+      console.log('Update Completed')
+      console.log(data2)
+
+              }
+
+
+
+  var cValue = function(d) { return d["position"];},
+    color = d3.scale.category20();
+  
+  var xValue = function(d) { return d.salary;},
+   xScale = d3.scale.linear().range([0, width]),
+   xMap = function(d) { return xScale(xValue(d));},
+   xAxis = d3.svg.axis().scale(xScale).orient("bottom");
+
+  var yValue = function(d) { return d.g_model;},
+   yScale = d3.scale.linear().range([height, 0]),
+   yMap = function(d) { return yScale(yValue(d));},
+   yAxis = d3.svg.axis().scale(yScale).orient("left");
+
+   // update scale domains
+  xScale.domain([d3.min(data, xValue)-1, d3.max(data, xValue)+1]);
+  //yScale.domain([d3.min(data, yValue)-1, d3.max(data, yValue)+1]);
+
+  yScale.domain([0, d3.max(data, yValue)+1]);
+
+    d3.select(".chart")
+    .data(data)
+
+
+     // update x-axis
+     svg.select(".x-axis")
+        .data(data)
+        .attr("class", "x-axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis)
+
+
+    // update y-axis
+     svg.select(".y-axis")
+        .data(data)
+        .attr("class", "y-axis")
+        .call(yAxis)
+  
+
+    // Add the points
+    svg.selectAll(".dot")
+      .data(data)
+      .enter()
+      .append("a")
+      .attr("xlink:href", function(d) { return "/player/" + d.playerID})
+      .append("circle")
+      .attr("class", "dot")
+      .attr("r", function(d) { return Math.pow((4 - d["depth"]),1.6) })
+      .attr("cx", xMap)
+      .attr('cy', 50)
+    svg.selectAll('.dot')
+      .transition()
+      .delay(1000)
+      .duration(2500)
+      .ease('elastic')
+      .attr("cy", yMap)
+      .style("fill", function(d) { return color(cValue(d));});
+
+      svg.selectAll('.dot')
+      .on("mouseover", function(d) {    
+            tooltip.transition()    
+                .duration(200)    
+                .style("opacity", .9);    
+            tooltip.html(d.playerName + "<br/>"  + d.g_model + "<br/>"  + d.position)  
+                .style("left", (d3.event.pageX) + "px")   
+                .style("top", (d3.event.pageY ) + "px");  
+            })          
+      .on("mouseout", function(d) {   
+            tooltip.transition()    
+                .duration(500)    
+                .style("opacity", 0); 
+        });
+
+      console.log(svg.selectAll(".dot"));
+
+  // draw legend
+  var legend = svg.selectAll(".legend")
+      .data(color.domain())
+    .enter().append("g")
+      .attr("class", "legend")
+      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+
+   // draw legend colored rectangles
+  legend.append("rect")
+      .attr("x", width - 18)
+      .attr("width", 18)
+      .attr("height", 18)
+      .style("fill", color);
+
+  // draw legend text
+  legend.append("text")
+      .attr("x", width - 24)
+      .attr("y", 9)
+      .attr("dy", ".35em")
+      .style("text-anchor", "end")
+      .text(function(d) { return d;});
+
+
+      // d3.json('/players/twitter', function(error, tweets) {
+        
+
+      //   var info = d3.map( tweets, function(d) { return d.name; });
+      //   console.log(info)
+          
+      //   }
+      //     )
+        
+
+    //update twitter
+    function readTwitter() {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function() {
+      if (xhttp.readyState == 4 && xhttp.status == 200) {
+        document.getElementById("twitter").innerHTML = 'Tweets Processed!';
+         }
+        };
+          xhttp.open("POST", "/players/", true);
+          xhttp.send();
+      updateInjured();
+    }
+
+    var getInjured = function(data2, data3) {
+            for (y in data2) {
+              for (x in data3) {
+              if (data3[x] == data2[y].playerName){
+                console.log(data2[y].playerName);
+                data2[y].g_model = 0; }
+              }
+            }
+          }
+        
+   var updateInjured = function() {
+
+    d3.json('/players/json/', function(error, stats) {
+
+    var data2 = d3.values(stats);
+
+    console.log(data2)
+
+    var dots = svg.selectAll(".dot")
+      .data(data2, function(d) {return d.playerID; });
+
+      debugger;
+      
+
+    dots
+    .transition()
+    .delay(1000)
+    .duration(2500)
+    .ease('elastic')
+    .attr('class', 'updated')
+    .attr("cy", yMap);
+
+      
+      })
+  }
+   
+     
+
+
+  </script>
+
+
+  <button id="twitter" onclick='readTwitter()'>Twitter Updates</button>
+ 
+
+ <div class="dropdown">
+    <h3>All Players</h3>
+    <select onChange="window.location.href=this.value">
+      <option value="">Select a Player</option>
+        {%for player in players%}
+          <option value='{{url_for('makeProjections', player_id=player.Index) }}'>{{player.Player}}</option>
+        {% endfor %}
+    </select>
+    
+</div>
+
+
+  <div class='tweets'>
+  
+   </div>
+</body>
+
+
+
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>{{player.Player}} Projections</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+  <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script src="http://d3js.org/d3.v3.min.js"></script>
+<style>
+
+body {
+  font: 10px sans-serif;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: steelblue;
+}
+
+.x.axis path {
+  display: none;
+}
+
+</style>
+</head>
+
+<body>
+<script type=text/javascript>
+
+var playerName = {{ player.Player | tojson | safe }}
+var playerSalary = {{ player.Salary | tojson | safe }}
+var playerGameTime = {{ player.GameTime | tojson | safe }}
+var playerRG = {{ player.RG | tojson | safe }}
+var playerFP = {{ player.FP | tojson | safe }}
+var playerNF = {{ player.NF | tojson | safe }}
+var playerRW = {{ player.RW | tojson | safe }}
+var playerPOS = {{ player.POS | tojson | safe }}
+var playerG_Model = {{ player.G_Model | tojson | safe }}
+var playerPPD = {{ player.PPD | tojson | safe }}
+
+var data = []
+
+{% for t in teammates %}
+
+var datum =
+{
+  'playerName':   {{ t.Player | tojson | safe }}, 
+  'salary':  {{ t.Salary | tojson | safe }}, 
+  'position':  {{ t.POS | tojson | safe }}, 
+  'gameTime': {{ t.GameTime | tojson | safe }}, 
+  'rg':  {{ t.RG | tojson | safe }}, 
+  'fp':  {{ t.FP | tojson | safe }},
+  'nf':  {{ t.NF | tojson | safe }}, 
+  'rw':  {{ t.RW | tojson | safe }},
+  'g_model':   {{ t.G_Model | tojson | safe }}, 
+  'ppd':  {{ t.PPD | tojson | safe }} 
+ };
+
+data.push(datum);
+
+{% endfor %}
+$(document).ready(function() {
+
+  console.log(data)
+
+})
+
+
+
+</script>
+<!-- <div class="container">
+  <h2>{{player.Player}}</h2>
+  <p>Here's the latest projection on {{player.Player}}</p>          -->   
+  <!-- <table class="table table-hover">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Salary</th>
+        <th>Fanduel Projected Total</th>
+        <th>Points per $1k FanDuel</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>{{player.Player}}</th>
+        <th>{{player.Salary}}</th>
+        <th>{{player.G_Model}}</th>
+        <th>{{player.PPD}}</th>
+      </tr>
+      {% for t in teammates %}
+      <tr>
+        <td>{{t.Player}}</td>
+        <td>{{t.Salary}}</td>
+        <td>{{t.G_Model}}</td>
+        <td>{{t.PPD}}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table> -->
+<!-- </div> -->
+
+</body>
+</html>
